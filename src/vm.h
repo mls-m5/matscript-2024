@@ -172,6 +172,8 @@ struct Context {
     struct Map *closure = nullptr;
 
     Context *parent = nullptr;
+
+    Value &at(const Token &name);
 };
 
 struct Command {
@@ -180,7 +182,7 @@ struct Command {
 };
 
 struct Section {
-    std::vector<std::unique_ptr<Command>> commands;
+    std::vector<std::shared_ptr<Command>> commands;
 };
 
 struct Function : public OtherValueContent {
@@ -242,6 +244,16 @@ struct Map : public OtherValueContent {
 
         throw std::runtime_error{"could not find member " + name.text +
                                  " in map"};
+    }
+
+    Value *find(const Token &name) {
+        for (auto &it : values) {
+            if (it.name == name.text) {
+                return &it.value;
+            }
+        }
+
+        return {};
     }
 
     // Create a variable and expect it to not exist

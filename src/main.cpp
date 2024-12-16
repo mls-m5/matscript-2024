@@ -1,3 +1,4 @@
+#include "commands.h"
 #include "parsererror.h"
 #include "settings.h"
 #include "token.h"
@@ -7,10 +8,58 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <utility>
 
-void parseVariableDeclaration(vm::Section &section, TokenIterator &it) {
+std::shared_ptr<vm::Command> parseVariableDeclaration(TokenIterator &it) {
     auto name = it.pop(TokenType::Text);
     it.pop(TokenType::Equal);
+
+    auto declaration = std::make_shared<vm::VariableDeclaration>();
+
+    declaration->name = name;
+
+    return declaration;
+}
+
+std::shared_ptr<vm::Command> parseExpression(TokenIterator &it) {
+    auto exp = std::shared_ptr<vm::Command>{};
+
+    switch (it.current().type) {
+    case TokenType::Let:
+        it.consume();
+        if (exp) {
+            throw ParserError{it.current(), "Let must be at beginning of line"};
+        }
+        exp = parseVariableDeclaration(it);
+        break;
+    case TokenType::Equal: {
+        it.consume();
+        if (!exp) {
+            throw ParserError{it.current(), "Line cannot start with '='"};
+        }
+
+        auto assignment = std::make_shared<vm::Assignment>();
+
+        assignment->left = std::exchange(exp, assignment);
+
+        assignment->right = parseExpression(it);
+
+        break;
+    }
+    case TokenType::Text: {
+        auto accessor = std::make_shared<vm::VariableAccessor>();
+
+        accessor->name = it.pop(TokenType::Text);
+
+        exp = std::move(accessor);
+
+        break;
+    }
+    default:
+        throw ParserError{it.current(), "Unexpected token"};
+    }
+
+    return exp;
 }
 
 std::shared_ptr<vm::Map> parseRoot(TokenIterator &it) {
@@ -18,13 +67,8 @@ std::shared_ptr<vm::Map> parseRoot(TokenIterator &it) {
 
     auto mainFunction = std::make_shared<vm::Function>();
 
-    switch (it.current().type) {
-    case TokenType::Let:
-        it.consume();
-        parseVariableDeclaration(mainFunction->body, it);
-        break;
-    default:
-        throw ParserError{it.current(), "Unexpected token"};
+    for (; it.current() != TokenType::Eof;) {
+        mainFunction->body.commands.push_back(parseExpression(it));
     }
 
     (*map)[t("main")] = mainFunction;

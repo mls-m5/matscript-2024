@@ -160,4 +160,15 @@ Value call(const Section &section, Context &context) {
     return ret;
 }
 
+Value &Context::at(const Token &name) {
+    if (auto f = closure->find(name)) {
+        return *f;
+    }
+
+    if (parent) {
+        return parent->at(name);
+    }
+
+    throw std::runtime_error{"can not find " + name.text};
+}
 } // namespace vm
