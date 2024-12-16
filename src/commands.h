@@ -18,7 +18,7 @@ struct Assignment : public Command {
     std::shared_ptr<Command> left;
     std::shared_ptr<Command> right;
 
-    Value run(Context &context) {
+    Value run(Context &context) override {
         auto l = left->run(context);
         auto r = right->run(context);
         return l = r;
@@ -28,7 +28,7 @@ struct Assignment : public Command {
 struct VariableAccessor : public Command {
     Token name;
 
-    Value run(Context &context) {
+    Value run(Context &context) override {
         return context.at(name);
     }
 };
@@ -37,7 +37,7 @@ struct FunctionCall : public Command {
     std::shared_ptr<Command> functionValue;
     std::vector<std::shared_ptr<Command>> arguments;
 
-    Value run(Context &context) {
+    Value run(Context &context) override {
         auto function = functionValue->run(context);
 
         auto args = std::vector<Value>{};
@@ -48,6 +48,17 @@ struct FunctionCall : public Command {
         }
 
         return call(function.as<Function>(), args, context);
+    }
+};
+
+struct StringLiteral : public Command {
+    StringLiteral(Token text)
+        : text{text} {}
+
+    Token text;
+
+    Value run(Context &context) override {
+        return String{text.text};
     }
 };
 

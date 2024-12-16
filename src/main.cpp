@@ -12,7 +12,6 @@
 
 std::shared_ptr<vm::Command> parseVariableDeclaration(TokenIterator &it) {
     auto name = it.pop(TokenType::Text);
-    it.pop(TokenType::Equal);
 
     auto declaration = std::make_shared<vm::VariableDeclaration>();
 
@@ -24,38 +23,90 @@ std::shared_ptr<vm::Command> parseVariableDeclaration(TokenIterator &it) {
 std::shared_ptr<vm::Command> parseExpression(TokenIterator &it) {
     auto exp = std::shared_ptr<vm::Command>{};
 
-    switch (it.current().type) {
-    case TokenType::Let:
-        it.consume();
-        if (exp) {
-            throw ParserError{it.current(), "Let must be at beginning of line"};
+    bool shouldBreak = false;
+
+    for (; it.current().type != TokenType::Semi &&
+           it.current().type != TokenType::Eof && !shouldBreak;) {
+
+        switch (it.current().type) {
+        case TokenType::Let:
+            it.consume();
+            if (exp) {
+                throw ParserError{it.current(),
+                                  "Let must be at beginning of line"};
+            }
+            exp = parseVariableDeclaration(it);
+            break;
+        case TokenType::Equal: {
+            it.consume();
+            if (!exp) {
+                throw ParserError{it.current(), "Line cannot start with '='"};
+            }
+
+            auto assignment = std::make_shared<vm::Assignment>();
+
+            assignment->left = std::exchange(exp, assignment);
+
+            assignment->right = parseExpression(it);
+
+            break;
         }
-        exp = parseVariableDeclaration(it);
-        break;
-    case TokenType::Equal: {
-        it.consume();
-        if (!exp) {
-            throw ParserError{it.current(), "Line cannot start with '='"};
+        case TokenType::Text: {
+            auto accessor = std::make_shared<vm::VariableAccessor>();
+
+            accessor->name = it.pop(TokenType::Text);
+
+            exp = std::move(accessor);
+
+            break;
         }
 
-        auto assignment = std::make_shared<vm::Assignment>();
+        case TokenType::LParen: {
+            if (!exp) {
+                throw ParserError{it.current(), "Unexpected paren"};
+            }
 
-        assignment->left = std::exchange(exp, assignment);
+            it.pop();
 
-        assignment->right = parseExpression(it);
+            auto call = std::make_shared<vm::FunctionCall>();
 
-        break;
+            call->functionValue = std::move(exp);
+
+            for (; it.current().type != TokenType::RParen;) {
+                call->arguments.push_back(parseExpression(it));
+
+                if (it.current() == TokenType::RParen) {
+                    break;
+                }
+                if (it.current() != TokenType::Comma) {
+                    throw ParserError{it.current(), "Unexpected token"};
+                }
+                it.pop();
+            }
+
+            it.pop();
+
+            exp = std::move(call);
+
+            break;
+        }
+
+        case TokenType::StringLiteral:
+            if (exp) {
+                throw ParserError{it.current(), "Unexpected token"};
+            }
+
+            exp = std::make_shared<vm::StringLiteral>(it.pop());
+            break;
+
+        default:
+            shouldBreak = true;
+            break;
+            //     throw ParserError{it.current(), "Unexpected token"};
+        }
     }
-    case TokenType::Text: {
-        auto accessor = std::make_shared<vm::VariableAccessor>();
 
-        accessor->name = it.pop(TokenType::Text);
-
-        exp = std::move(accessor);
-
-        break;
-    }
-    default:
+    if (!exp) {
         throw ParserError{it.current(), "Unexpected token"};
     }
 
@@ -69,6 +120,8 @@ std::shared_ptr<vm::Map> parseRoot(TokenIterator &it) {
 
     for (; it.current() != TokenType::Eof;) {
         mainFunction->body.commands.push_back(parseExpression(it));
+
+        it.pop(TokenType::Semi);
     }
 
     (*map)[t("main")] = mainFunction;
