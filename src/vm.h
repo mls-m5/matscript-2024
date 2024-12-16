@@ -1,5 +1,6 @@
 #pragma once
 
+#include "parsererror.h"
 #include "token.h"
 #include <memory>
 #include <stdexcept>
@@ -241,6 +242,18 @@ struct Map : public OtherValueContent {
 
         throw std::runtime_error{"could not find member " + name.text +
                                  " in map"};
+    }
+
+    // Create a variable and expect it to not exist
+    Value &define(const Token &name) {
+        for (auto &v : values) {
+            if (v.name == name.text) {
+                std::runtime_error{"variable already exists"};
+            }
+        }
+
+        values.push_back({name});
+        return values.back().value;
     }
 };
 

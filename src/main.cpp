@@ -64,37 +64,39 @@ int main(int argc, char *argv[]) {
 
     auto ret = call(f, {vm::Float{-1}}, context);
 
-    // std::cout << "Returned value " << ret.as<vm::Float>().value << "\n";
+    auto &mainF = module->at<vm::Function>(Token::from("main"));
 
-    auto &f2 = module->at<vm::Map>(Token::from("std"))
-                   .at<vm::Function>(Token::from("println"));
+    call(mainF, {}, context);
 
-    call(f2,
-         std::vector<vm::Value>{vm::Value{
-             vm::String{"returned value:"},
-         }},
-         context);
+    // auto &f2 = module->at<vm::Map>(Token::from("std"))
+    //                .at<vm::Function>(Token::from("println"));
 
-    call(f2,
-         std::vector<vm::Value>{vm::Value{
-             ret,
-         }},
-         context);
+    // call(f2,
+    //      std::vector<vm::Value>{vm::Value{
+    //          vm::String{"returned value:"},
+    //      }},
+    //      context);
 
-    auto &f3 = module->at<vm::Map>(Token::from("std"))
-                   .at<vm::Function>(Token::from("help"));
+    // call(f2,
+    //      std::vector<vm::Value>{vm::Value{
+    //          ret,
+    //      }},
+    //      context);
 
-    call(f3,
-         std::vector<vm::Value>{vm::Value{
-             ret,
-         }},
-         context);
+    // auto &f3 = module->at<vm::Map>(Token::from("std"))
+    //                .at<vm::Function>(Token::from("help"));
 
-    call(f3,
-         std::vector<vm::Value>{vm::Value{
-             (*module)[t("std")],
-         }},
-         context);
+    // call(f3,
+    //      std::vector<vm::Value>{vm::Value{
+    //          ret,
+    //      }},
+    //      context);
+
+    // call(f3,
+    //      std::vector<vm::Value>{vm::Value{
+    //          (*module)[t("std")],
+    //      }},
+    //      context);
 
     return 0;
 }
