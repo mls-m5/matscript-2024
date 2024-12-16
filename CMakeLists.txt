@@ -29,3 +29,10 @@ target_link_libraries(
 
 add_subdirectory(test)
 
+file(
+    COPY
+    test.msc
+    DESTINATION
+    .
+)
+
