@@ -55,15 +55,19 @@ struct Float {
     double value = 0.f;
 };
 
+struct Bool {
+    bool value = false;
+};
+
 template <typename T>
-concept BuiltinTypes =
-    std::same_as<T, String> || std::same_as<T, Int> || std::same_as<T, Float>;
+concept BuiltinTypes = std::same_as<T, String> || std::same_as<T, Int> ||
+                       std::same_as<T, Float> || std::same_as<T, Bool>;
 
 template <typename T>
 concept InheritsOther = std::is_base_of_v<OtherValueContent, T>;
 
 struct Value {
-    std::variant<String, Int, Float, OtherValue> value;
+    std::variant<String, Int, Float, Bool, OtherValue> value;
 
     Value() = default;
 
@@ -89,7 +93,7 @@ struct Value {
         return *this;
     }
 
-    template <typename T>
+    template <InheritsOther T>
     T &as() {
         if (!std::holds_alternative<OtherValue>(value)) {
             throw std::runtime_error{"Cannot convert value to function"};
@@ -104,6 +108,15 @@ struct Value {
         }
 
         return static_cast<T &>(*o.content());
+    }
+
+    template <BuiltinTypes T>
+    T &as() {
+        if (!std::holds_alternative<T>(value)) {
+            throw std::runtime_error{"Cannot convert value to float"};
+        }
+
+        return std::get<T>(value);
     }
 
     template <InheritsOther T>
@@ -127,32 +140,32 @@ struct Value {
     }
 };
 
-template <>
-inline Float &Value::as() {
-    if (!std::holds_alternative<Float>(value)) {
-        throw std::runtime_error{"Cannot convert value to float"};
-    }
+// template <>
+// inline Float &Value::as() {
+//     if (!std::holds_alternative<Float>(value)) {
+//         throw std::runtime_error{"Cannot convert value to float"};
+//     }
 
-    return std::get<Float>(value);
-}
+//     return std::get<Float>(value);
+// }
 
-template <>
-inline Int &Value::as() {
-    if (!std::holds_alternative<Int>(value)) {
-        throw std::runtime_error{"Cannot convert value to int"};
-    }
+// template <>
+// inline Int &Value::as() {
+//     if (!std::holds_alternative<Int>(value)) {
+//         throw std::runtime_error{"Cannot convert value to int"};
+//     }
 
-    return std::get<Int>(value);
-}
+//     return std::get<Int>(value);
+// }
 
-template <>
-inline String &Value::as() {
-    if (!std::holds_alternative<String>(value)) {
-        throw std::runtime_error{"Cannot convert value to string"};
-    }
+// template <>
+// inline String &Value::as() {
+//     if (!std::holds_alternative<String>(value)) {
+//         throw std::runtime_error{"Cannot convert value to string"};
+//     }
 
-    return std::get<String>(value);
-}
+//     return std::get<String>(value);
+// }
 
 struct Context {
     struct Map *closure = nullptr;

@@ -4,6 +4,7 @@
 #include <memory>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 #include <variant>
 
 namespace vm {
@@ -14,14 +15,31 @@ struct File : public OtherValueContent {
     std::ifstream file;
 };
 
+Value FileNext(Context &context) {
+    auto &self = context.closure->at<Map>(t("this"));
+    auto &file = self.at<File>(t("file"));
+
+    std::string line;
+    if (std::getline(file.file, line)) {
+        return String{line};
+    }
+    return Bool{};
+}
+
 void addFileStuff(Map &std) {
     auto fileType = std::make_shared<Map>();
+
+    (*fileType)[t("lines")] = std::make_shared<Function>(
+        std::vector{t("path")},
+        [](Context &context) -> Value { return Value{}; });
 
     std[t("File")] = std::move(fileType);
 
     std[t("open")] = std::make_shared<Function>(
         std::vector{t("path")}, [](Context &context) -> Value {
             auto &path = context.closure->at<String>(t("value"));
+
+            std::cout << "opening file " << path.value << std::endl;
 
             auto file = std::make_shared<File>();
             file->file.open(path.value);
