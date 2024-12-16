@@ -3,6 +3,7 @@
 #include "token.h"
 #include <memory>
 #include <ranges>
+#include <stdexcept>
 #include <typeinfo>
 #include <variant>
 #include <vector>
@@ -53,6 +54,20 @@ struct Value {
         };
 
         return *this;
+    }
+
+    template <typename T>
+    std::shared_ptr<T> &as() {
+        if (!std::holds_alternative<OtherValue>(value)) {
+            throw std::runtime_error{"Cannot convert value to function"};
+        }
+
+        auto &o = std::get<OtherValue>(value);
+        if (o.type != typeid(T).hash_code()) {
+            throw std::runtime_error{"Cannot convert value to function"};
+        }
+
+        return static_cast<std::shared_ptr<T> &>(o.content);
     }
 };
 

@@ -29,5 +29,11 @@ int main(int argc, char *argv[]) {
 
     (*module)[Token::from("std")] = vm::getStd();
 
+    auto context = vm::Context{};
+
+    auto f = (*module)[Token::from("std")].as<vm::Function>();
+
+    call(*f, {1}, context);
+
     return 0;
 }
