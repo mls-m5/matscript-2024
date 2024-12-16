@@ -1,3 +1,4 @@
+
 let file = open("data/01.txt");
 
 let v1 = [];
@@ -12,14 +13,14 @@ for (let line in file.lines()) {
 v1.sort();
 v2.sort();
 
-let m = {};
+// let m = {};
 
 let sum1 = 0;
 
-for (let i in range(0, v1.sort())) {
+for (let i in std.range(0, v1.sort())) {
     let a = v1[i];
     let b = v2[i];
     sum1 += std.abs(a - b);
 }
 
-println("Part 1: {}", sum1);
+std.println("Part 1: {}", sum1);

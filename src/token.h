@@ -151,6 +151,11 @@ struct Token {
     }
 };
 
+inline Token t(std::string_view text,
+               Token::Location location = {0, 0, nullptr}) {
+    return Token::from(text);
+}
+
 inline std::ostream &operator<<(std::ostream &stream, const Token &token) {
     stream << token.text;
     return stream;

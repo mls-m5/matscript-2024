@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <typeinfo>
 #include <variant>
 #include <vector>
@@ -54,8 +55,23 @@ struct Float {
     double value = 0.f;
 };
 
+template <typename T>
+concept BuiltinTypes =
+    std::same_as<T, String> || std::same_as<T, Int> || std::same_as<T, Float>;
+
+template <typename T>
+concept InheritsOther = std::is_base_of_v<OtherValueContent, T>;
+
 struct Value {
     std::variant<String, Int, Float, OtherValue> value;
+
+    Value() = default;
+
+    template <BuiltinTypes T>
+    Value(const T &value)
+        : value{value} {}
+
+    Value(const Value &) = default;
 
     template <typename T>
     Value &operator=(std::shared_ptr<T> v) {
@@ -83,6 +99,26 @@ struct Value {
         }
 
         return static_cast<T &>(*o.content());
+    }
+
+    template <InheritsOther T>
+    bool is() {
+        if (std::holds_alternative<OtherValue>(value)) {
+            if (std::get<OtherValue>(value).type == typeid(T).hash_code()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    template <BuiltinTypes T>
+    bool is() {
+        if (std::holds_alternative<T>(value)) {
+            return true;
+        }
+
+        return false;
     }
 };
 
@@ -150,6 +186,8 @@ struct Map : public OtherValueContent {
     };
 
     std::vector<Declaration> values;
+
+    Value protoype;
 
     Value &operator[](const Token &name) {
         for (auto &it : values) {

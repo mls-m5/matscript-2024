@@ -12,17 +12,20 @@ std::shared_ptr<Map> createStd() {
     auto std = std::make_shared<Map>();
 
     (*std)[Token::from("abs")] = std::make_shared<Function>(
-        std::vector{Token::from("value")}, [](Context &context) {
+        std::vector{Token::from("value")}, [](Context &context) -> Value {
             auto &value = context.closure->at(Token::from("value"));
             if (std::holds_alternative<Float>(value.value)) {
-                return Value{
-                    .value = Float{std::abs(value.as<Float>().value)},
-                };
+                // return Value{
+                //     .value =
+                return Float{std::abs(value.as<Float>().value)};
+                //     ,
+                // };
             }
             else if (std::holds_alternative<Int>(value.value)) {
-                return Value{
-                    .value = Int{std::abs(value.as<Int>().value)},
-                };
+                // return Value{
+                //     .value =
+                return Int{std::abs(value.as<Int>().value)};
+                // };
             }
             throw std::runtime_error{"could not run abs on this"};
         });
@@ -30,21 +33,75 @@ std::shared_ptr<Map> createStd() {
     (*std)[Token::from("println")] = std::make_shared<Function>(
         std::vector{Token::from("value")}, [](Context &context) {
             auto &value = context.closure->at(Token::from("value"));
-            if (std::holds_alternative<Float>(value.value)) {
+            if (value.is<Float>()) {
                 std::cout << value.as<Float>().value << std::endl;
                 return Value{};
             }
-            else if (std::holds_alternative<Int>(value.value)) {
+            else if (value.is<Int>()) {
                 std::cout << value.as<Int>().value << std::endl;
                 return Value{};
             }
-            else if (std::holds_alternative<String>(value.value)) {
+            else if (value.is<String>()) {
                 std::cout << value.as<String>().value << std::endl;
                 return Value{};
             }
 
             throw std::runtime_error{"could not run print on this"};
         });
+
+    (*std)[Token::from("help")] = std::make_shared<Function>(
+        std::vector{Token::from("value")}, [](Context &context) -> Value {
+            auto &value = context.closure->at(Token::from("value"));
+            if (value.is<Float>()) {
+                std::cout << "[Float]" << std::endl;
+                return {};
+            }
+            else if (value.is<Int>()) {
+                std::cout << "[Int]" << std::endl;
+                return {};
+            }
+            else if (value.is<String>()) {
+                std::cout << "[String]" << std::endl;
+                return {};
+            }
+            else if (value.is<Map>()) {
+                auto &v = value.as<Map>();
+
+                std::cout << "[Map]{\n";
+                for (auto &v : v.values) {
+                    std::cout << "  " << v.name << "\n";
+                }
+                std::cout << "}\n";
+                return {};
+            }
+            else if (value.is<Function>()) {
+                auto &v = value.as<Function>();
+                std::cout << "[function]\n";
+                return {};
+            }
+
+            throw std::runtime_error{"no help for this expression"};
+        });
+
+    // auto fileType = std::make_shared<Map>();
+
+    // (*fileType)[t("open")] =
+
+    //     (*std)[Token::from("println")] =
+    //     std::make_shared<Function>(
+    //         std::vector{Token::from("path")}, [](Context &context) -> Value {
+    //             auto &value =
+    //             context.closure->at<String>(Token::from("path")); std::cout
+    //             << value.value << std::endl; return {}; //
+    //         });
+
+    // (*std)[Token::from("File")] = std::move(fileType);
+
+    // (*std)[Token::from("open")] = std::make_shared<Function>(
+    //     std::vector{Token::from("path")}, [](Context &context) -> Value {
+    //         auto &value = context.closure->at<String>(Token::from("value"));
+    //         return {};
+    //     });
 
     return std;
 }
