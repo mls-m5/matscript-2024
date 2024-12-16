@@ -1,0 +1,3 @@
+[submodule "lib/matperf"]
+	path = lib/matperf
+	url = git@github.com:mls-m5/matperf.git
