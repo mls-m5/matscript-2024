@@ -17,7 +17,7 @@ add_executable(
 target_compile_features(
     matscript
     PRIVATE
-    cxx_std_20
+    cxx_std_23
     )
 
 find_package(Threads)

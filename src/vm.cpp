@@ -1,5 +1,7 @@
 #include "vm.h"
+#include <iostream>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <variant>
 
@@ -17,7 +19,31 @@ std::shared_ptr<Map> createStd() {
                     .value = Float{std::abs(value.as<Float>().value)},
                 };
             }
+            else if (std::holds_alternative<Int>(value.value)) {
+                return Value{
+                    .value = Int{std::abs(value.as<Int>().value)},
+                };
+            }
             throw std::runtime_error{"could not run abs on this"};
+        });
+
+    (*std)[Token::from("println")] = std::make_shared<Function>(
+        std::vector{Token::from("value")}, [](Context &context) {
+            auto &value = context.closure->at(Token::from("value"));
+            if (std::holds_alternative<Float>(value.value)) {
+                std::cout << value.as<Float>().value << std::endl;
+                return Value{};
+            }
+            else if (std::holds_alternative<Int>(value.value)) {
+                std::cout << value.as<Int>().value << std::endl;
+                return Value{};
+            }
+            else if (std::holds_alternative<String>(value.value)) {
+                std::cout << value.as<String>().value << std::endl;
+                return Value{};
+            }
+
+            throw std::runtime_error{"could not run print on this"};
         });
 
     return std;

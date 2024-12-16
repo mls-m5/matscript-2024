@@ -2,7 +2,6 @@
 
 #include "token.h"
 #include <memory>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -90,10 +89,28 @@ struct Value {
 template <>
 inline Float &Value::as() {
     if (!std::holds_alternative<Float>(value)) {
-        throw std::runtime_error{"Cannot convert value to function"};
+        throw std::runtime_error{"Cannot convert value to float"};
     }
 
     return std::get<Float>(value);
+}
+
+template <>
+inline Int &Value::as() {
+    if (!std::holds_alternative<Int>(value)) {
+        throw std::runtime_error{"Cannot convert value to int"};
+    }
+
+    return std::get<Int>(value);
+}
+
+template <>
+inline String &Value::as() {
+    if (!std::holds_alternative<String>(value)) {
+        throw std::runtime_error{"Cannot convert value to string"};
+    }
+
+    return std::get<String>(value);
 }
 
 struct Context {
@@ -174,10 +191,6 @@ struct Map : public OtherValueContent {
 Value call(const Section &section, Context &context);
 
 Value call(const Function &f, std::vector<Value> values, Context &context);
-
-// struct Module {
-//     Map values;
-// };
 
 const std::shared_ptr<Map> &getStd();
 
