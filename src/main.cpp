@@ -1,10 +1,36 @@
+#include "parsererror.h"
 #include "settings.h"
 #include "token.h"
+#include "tokeniterator.h"
 #include "tokenizer.h"
 #include "vm.h"
 #include <filesystem>
 #include <iostream>
 #include <memory>
+
+void parseVariableDeclaration(vm::Section &section, TokenIterator &it) {
+    auto name = it.pop(TokenType::Text);
+    it.pop(TokenType::Equal);
+}
+
+std::shared_ptr<vm::Map> parseRoot(TokenIterator &it) {
+    auto map = std::make_shared<vm::Map>();
+
+    auto mainFunction = std::make_shared<vm::Function>();
+
+    switch (it.current().type) {
+    case TokenType::Let:
+        it.consume();
+        parseVariableDeclaration(mainFunction->body, it);
+        break;
+    default:
+        throw ParserError{it.current(), "Unexpected token"};
+    }
+
+    (*map)[t("main")] = mainFunction;
+
+    return map;
+}
 
 int main(int argc, char *argv[]) {
     const auto settings = Settings{argc, argv};
@@ -18,14 +44,16 @@ int main(int argc, char *argv[]) {
         }
     }();
 
-    for (Token token; (file.current(TokenType::Any).type != TokenType::Eof);) {
-        // vlog(file.pop(TokenType::Any).text);
-        std::cout << file.pop(TokenType::Any).text << std::endl;
-    }
+    // for (Token token; (file.current(TokenType::Any).type != TokenType::Eof);)
+    // {
+    //     std::cout << file.pop(TokenType::Any).text << std::endl;
+    // }
+
+    auto module = parseRoot(file);
 
     std::cout << std::endl;
 
-    auto module = std::make_shared<vm::Map>();
+    // auto module = std::make_shared<vm::Map>();
 
     (*module)[Token::from("std")] = vm::getStd();
 
