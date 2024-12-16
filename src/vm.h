@@ -71,14 +71,19 @@ struct Value {
     Value(const T &value)
         : value{value} {}
 
+    template <InheritsOther T>
+    Value(std::shared_ptr<T> v) {
+        auto o = OtherValue{};
+        o.set(v);
+        value = std::move(o);
+    }
+
     Value(const Value &) = default;
 
-    template <typename T>
+    template <InheritsOther T>
     Value &operator=(std::shared_ptr<T> v) {
         auto o = OtherValue{};
-
         o.set(v);
-        o.set<T>(v);
         value = std::move(o);
 
         return *this;
