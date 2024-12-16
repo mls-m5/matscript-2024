@@ -1,7 +1,9 @@
 #pragma once
 
 #include "token.h"
+#include <memory>
 #include <ranges>
+#include <typeinfo>
 #include <variant>
 #include <vector>
 
@@ -13,7 +15,21 @@ struct Variable {
     Token name;
 };
 
-struct OtherValue {};
+struct OtherValueContent {
+    virtual ~OtherValueContent() = default;
+};
+
+struct OtherValue {
+    decltype(typeid(void).hash_code()) type = typeid(void).hash_code();
+
+    template <typename T>
+    void set(std::shared_ptr<T> ptr) {
+        type = typeid(T).hash_code();
+    }
+    std::shared_ptr<OtherValueContent> content;
+};
+
+using OtherPtr = std::shared_ptr<OtherValueContent>;
 
 struct String {
     std::string value;
@@ -23,8 +39,21 @@ struct Int {
     int64_t value = 0;
 };
 
+struct Float {
+    double value = 0.f;
+};
+
 struct Value {
-    std::variant<String, Int, OtherValue> value;
+    std::variant<String, Int, Float, OtherValue> value;
+
+    Value &operator=(OtherPtr v) {
+        // value = std::move(v);
+        value = OtherValue{
+            .content = v,
+        };
+
+        return *this;
+    }
 };
 
 struct Context {
@@ -42,7 +71,8 @@ struct Section {
     std::vector<std::unique_ptr<Command>> commands;
 };
 
-struct Function : public OtherValue {
+struct Function : public OtherValueContent {
+
     std::vector<Token> argumentNames;
 
     Section body;
@@ -51,7 +81,7 @@ struct Function : public OtherValue {
     FunctionType native = nullptr;
 };
 
-struct Map : public OtherValue {
+struct Map : public OtherValueContent {
     struct Declaration {
         Token name;
         Value value;
@@ -73,37 +103,14 @@ struct Map : public OtherValue {
     }
 };
 
-void call(const Section &section, Context &context) {
-    for (auto &command : section.commands) {
-        command->run(context);
-    }
-}
+void call(const Section &section, Context &context);
 
-void call(const Function &f, std::vector<Value> values, Context &context) {
-    auto closure = Map{};
+void call(const Function &f, std::vector<Value> values, Context &context);
 
-    auto newContext = Context{
-        .closure = &closure,
-        .parent = &context,
-    };
+// struct Module {
+//     Map values;
+// };
 
-    if (f.native) {
-        f.native(newContext);
-        return;
-    }
-
-    for (auto i : std::ranges::iota_view{
-             0uz, std::min(values.size(), f.argumentNames.size())}) {
-        closure[f.argumentNames.at(i)] = std::move(values.at(i));
-    }
-
-    call(f.body, newContext);
-}
-
-struct Module {
-    Map values;
-
-    void defineVariable(Token name) {}
-};
+const std::shared_ptr<Map> &getStd();
 
 } // namespace vm

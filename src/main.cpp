@@ -1,8 +1,10 @@
 #include "settings.h"
 #include "token.h"
 #include "tokenizer.h"
+#include "vm.h"
 #include <filesystem>
 #include <iostream>
+#include <memory>
 
 int main(int argc, char *argv[]) {
     const auto settings = Settings{argc, argv};
@@ -22,6 +24,10 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << std::endl;
+
+    auto module = std::make_shared<vm::Map>();
+
+    (*module)[Token::from("std")] = vm::getStd();
 
     return 0;
 }

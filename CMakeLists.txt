@@ -11,6 +11,7 @@ add_executable(
     src/tokenizer.cpp
     src/token.cpp
     src/parsererror.cpp
+    src/vm.cpp
     )
 
 target_compile_features(
