@@ -4,6 +4,8 @@
 #include <memory>
 #include <ranges>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <typeinfo>
 #include <variant>
 #include <vector>
@@ -22,12 +24,21 @@ struct OtherValueContent {
 
 struct OtherValue {
     decltype(typeid(void).hash_code()) type = typeid(void).hash_code();
+    std::string_view tName = typeid(void).name();
 
     template <typename T>
     void set(std::shared_ptr<T> ptr) {
         type = typeid(T).hash_code();
+        tName = typeid(T).name();
+        _content = ptr;
     }
-    std::shared_ptr<OtherValueContent> content;
+
+    const std::shared_ptr<OtherValueContent> content() {
+        return _content;
+    }
+
+private:
+    std::shared_ptr<OtherValueContent> _content;
 };
 
 using OtherPtr = std::shared_ptr<OtherValueContent>;
@@ -47,29 +58,43 @@ struct Float {
 struct Value {
     std::variant<String, Int, Float, OtherValue> value;
 
-    Value &operator=(OtherPtr v) {
-        // value = std::move(v);
-        value = OtherValue{
-            .content = v,
-        };
+    template <typename T>
+    Value &operator=(std::shared_ptr<T> v) {
+        auto o = OtherValue{};
+
+        o.set(v);
+        o.set<T>(v);
+        value = std::move(o);
 
         return *this;
     }
 
     template <typename T>
-    std::shared_ptr<T> &as() {
+    T &as() {
         if (!std::holds_alternative<OtherValue>(value)) {
             throw std::runtime_error{"Cannot convert value to function"};
         }
 
         auto &o = std::get<OtherValue>(value);
-        if (o.type != typeid(T).hash_code()) {
-            throw std::runtime_error{"Cannot convert value to function"};
+        auto hash = typeid(T).hash_code();
+        if (o.type != hash) {
+            throw std::runtime_error{"Cannot convert value to function " +
+                                     std::string{o.tName} + " to " +
+                                     std::string{typeid(T).name()}};
         }
 
-        return static_cast<std::shared_ptr<T> &>(o.content);
+        return static_cast<T &>(*o.content());
     }
 };
+
+template <>
+inline Float &Value::as() {
+    if (!std::holds_alternative<Float>(value)) {
+        throw std::runtime_error{"Cannot convert value to function"};
+    }
+
+    return std::get<Float>(value);
+}
 
 struct Context {
     struct Map *closure = nullptr;
@@ -79,7 +104,7 @@ struct Context {
 
 struct Command {
     virtual ~Command() = default;
-    virtual void run(struct Context &context) = 0;
+    virtual Value run(struct Context &context) = 0;
 };
 
 struct Section {
@@ -87,12 +112,17 @@ struct Section {
 };
 
 struct Function : public OtherValueContent {
+    using FunctionType = Value (*)(Context &);
+
+    Function() = default;
+    Function(std::vector<Token> args, FunctionType f)
+        : argumentNames{std::move(args)}
+        , native{f} {}
 
     std::vector<Token> argumentNames;
 
     Section body;
 
-    using FunctionType = void (*)(Context &);
     FunctionType native = nullptr;
 };
 
@@ -116,11 +146,34 @@ struct Map : public OtherValueContent {
         });
         return values.back().value;
     }
+
+    template <typename T>
+    T &at(const Token &name) {
+        for (auto &it : values) {
+            if (it.name == name.text) {
+                return it.value.as<T>();
+            }
+        }
+
+        throw std::runtime_error{"could not find member " + name.text +
+                                 " in map"};
+    }
+
+    Value &at(const Token &name) {
+        for (auto &it : values) {
+            if (it.name == name.text) {
+                return it.value;
+            }
+        }
+
+        throw std::runtime_error{"could not find member " + name.text +
+                                 " in map"};
+    }
 };
 
-void call(const Section &section, Context &context);
+Value call(const Section &section, Context &context);
 
-void call(const Function &f, std::vector<Value> values, Context &context);
+Value call(const Function &f, std::vector<Value> values, Context &context);
 
 // struct Module {
 //     Map values;

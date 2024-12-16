@@ -31,9 +31,17 @@ int main(int argc, char *argv[]) {
 
     auto context = vm::Context{};
 
-    auto f = (*module)[Token::from("std")].as<vm::Function>();
+    // auto &f = (*module)[Token::from("std")].as<vm::Function>();
+    auto &f = module->at<vm::Map>(Token::from("std"))
+                  .at<vm::Function>(Token::from("abs"));
 
-    call(*f, {1}, context);
+    auto ret = call(f,
+                    std::vector<vm::Value>{vm::Value{
+                        .value = vm::Float{-1},
+                    }},
+                    context);
+
+    std::cout << "Returned value " << ret.as<vm::Float>().value << "\n";
 
     return 0;
 }
