@@ -62,4 +62,10 @@ struct StringLiteral : public Command {
     }
 };
 
+struct ArrayDeclaration : public Command {
+    Value run(Context &context) override {
+        return std::make_shared<Array>();
+    }
+};
+
 } // namespace vm

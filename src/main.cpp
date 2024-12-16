@@ -99,10 +99,22 @@ std::shared_ptr<vm::Command> parseExpression(TokenIterator &it) {
             exp = std::make_shared<vm::StringLiteral>(it.pop());
             break;
 
+        case TokenType::LSquare:
+            it.pop();
+            it.pop(TokenType::RSquare);
+
+            if (exp) {
+                // TODO: Handle array indexing
+                throw ParserError{it.current(), "Unexpected token"};
+            }
+
+            exp = std::make_shared<vm::ArrayDeclaration>();
+
+            break;
+
         default:
             shouldBreak = true;
             break;
-            //     throw ParserError{it.current(), "Unexpected token"};
         }
     }
 
@@ -141,16 +153,9 @@ int main(int argc, char *argv[]) {
         }
     }();
 
-    // for (Token token; (file.current(TokenType::Any).type != TokenType::Eof);)
-    // {
-    //     std::cout << file.pop(TokenType::Any).text << std::endl;
-    // }
-
     auto module = parseRoot(file);
 
     std::cout << std::endl;
-
-    // auto module = std::make_shared<vm::Map>();
 
     (*module)[Token::from("std")] = vm::getStd();
 

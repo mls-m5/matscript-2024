@@ -269,6 +269,10 @@ struct Map : public OtherValueContent {
     }
 };
 
+struct Array : public OtherValueContent {
+    std::vector<Value> values;
+};
+
 Value call(const Section &section, Context &context);
 
 Value call(const Function &f, std::vector<Value> values, Context &context);
