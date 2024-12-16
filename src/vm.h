@@ -60,15 +60,24 @@ struct Bool {
     bool value = false;
 };
 
+struct Void {};
+
 template <typename T>
 concept BuiltinTypes = std::same_as<T, String> || std::same_as<T, Int> ||
                        std::same_as<T, Float> || std::same_as<T, Bool>;
 
 template <typename T>
+concept IsVoid = std::same_as<T, Void>;
+
+template <typename T>
+concept IntegralTypes =
+    std::same_as<T, Int> || std::same_as<T, Float> || std::same_as<T, Bool>;
+
+template <typename T>
 concept InheritsOther = std::is_base_of_v<OtherValueContent, T>;
 
 struct Value {
-    std::variant<String, Int, Float, Bool, OtherValue> value;
+    std::variant<Void, String, Int, Float, Bool, OtherValue> value;
 
     Value() = default;
 
@@ -139,34 +148,26 @@ struct Value {
 
         return false;
     }
+
+    template <IsVoid T>
+    bool is() {
+        return std::holds_alternative<T>();
+    }
+
+    bool asBool() {
+        if (std::holds_alternative<Int>(value)) {
+            return std::get<Int>(value).value;
+        }
+        if (std::holds_alternative<Bool>(value)) {
+            return std::get<Bool>(value).value;
+        }
+        if (std::holds_alternative<Float>(value)) {
+            return std::get<Float>(value).value;
+        }
+
+        throw std::runtime_error{"Type is not convertible to bool"};
+    }
 };
-
-// template <>
-// inline Float &Value::as() {
-//     if (!std::holds_alternative<Float>(value)) {
-//         throw std::runtime_error{"Cannot convert value to float"};
-//     }
-
-//     return std::get<Float>(value);
-// }
-
-// template <>
-// inline Int &Value::as() {
-//     if (!std::holds_alternative<Int>(value)) {
-//         throw std::runtime_error{"Cannot convert value to int"};
-//     }
-
-//     return std::get<Int>(value);
-// }
-
-// template <>
-// inline String &Value::as() {
-//     if (!std::holds_alternative<String>(value)) {
-//         throw std::runtime_error{"Cannot convert value to string"};
-//     }
-
-//     return std::get<String>(value);
-// }
 
 struct Context {
     struct Map *closure = nullptr;

@@ -68,4 +68,33 @@ struct ArrayDeclaration : public Command {
     }
 };
 
+struct ForDeclaration : public Command {
+    Section section;
+    std::shared_ptr<Command> declaration;
+    std::shared_ptr<Command> range;
+
+    Value run(Context &context) override {
+        auto closure = Map{};
+        auto newContext = Context{
+            .closure = &closure,
+            .parent = &context,
+        };
+
+        auto ret = Value{};
+
+        declaration->run(newContext);
+
+        auto r = range->run(newContext);
+
+        // TODO:  Call iterator
+
+        throw "implement this";
+        // for (Value value; !(value = r.as<>() r.is<Void>());) {
+        //     ret = call(section, newContext);
+        // }
+
+        return ret;
+    }
+};
+
 } // namespace vm
