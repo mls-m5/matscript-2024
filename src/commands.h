@@ -69,7 +69,7 @@ struct ArrayDeclaration : public Expression {
 };
 
 struct ForDeclaration : public Expression {
-    Section section;
+    std::shared_ptr<Section> section;
     std::shared_ptr<Expression> declaration;
     std::shared_ptr<Expression> range;
 
@@ -89,7 +89,7 @@ struct ForDeclaration : public Expression {
         auto next = r.as<Map>()[t("next")].as<Function>();
 
         for (Value value; !(value = call(next, {r}, newContext)).asBool();) {
-            ret = call(section, newContext);
+            ret = call(*section, newContext);
         }
 
         return ret;

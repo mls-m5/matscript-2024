@@ -24,6 +24,22 @@ std::shared_ptr<vm::Expression> parseVariableDeclaration(TokenIterator &it) {
     return declaration;
 }
 
+std::shared_ptr<vm::Section> parseSection(
+    TokenIterator &it, std::function<bool(const Token &)> endCondition = {}) {
+    auto exp = std::make_shared<vm::Section>();
+
+    for (; it.current() != TokenType::Eof &&
+           !(endCondition && endCondition(it.current()));) {
+        exp->commands.push_back(parseExpression(it));
+
+        if (it.current().type == TokenType::Semi) {
+            it.pop(TokenType::Semi);
+        }
+    }
+
+    return exp;
+}
+
 std::shared_ptr<vm::Expression> parseFor(TokenIterator &it) {
     it.pop(TokenType::For);
     it.pop(TokenType::LParen);
@@ -37,6 +53,13 @@ std::shared_ptr<vm::Expression> parseFor(TokenIterator &it) {
     exp->range = parseExpression(it);
 
     it.pop(TokenType::RParen);
+
+    it.pop(TokenType::LBrace);
+
+    exp->section = parseSection(
+        it, [](const Token &token) { return token.type == TokenType::RBrace; });
+
+    it.pop(TokenType::RBrace);
 
     return exp;
 }
@@ -194,13 +217,7 @@ std::shared_ptr<vm::Map> parseRoot(TokenIterator &it) {
 
     auto mainFunction = std::make_shared<vm::Function>();
 
-    for (; it.current() != TokenType::Eof;) {
-        mainFunction->body.commands.push_back(parseExpression(it));
-
-        if (it.current().type == TokenType::Semi) {
-            it.pop(TokenType::Semi);
-        }
-    }
+    mainFunction->body = parseSection(it);
 
     (*map)[t("main")] = mainFunction;
 

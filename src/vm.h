@@ -196,7 +196,7 @@ struct Function : public OtherValueContent {
 
     std::vector<Token> argumentNames;
 
-    Section body;
+    std::shared_ptr<Section> body;
 
     FunctionType native = nullptr;
 };

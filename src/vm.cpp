@@ -154,7 +154,7 @@ Value call(const Function &f,
         return f.native(newContext);
     }
 
-    return call(f.body, newContext);
+    return call(*f.body, newContext);
 }
 
 Value call(const Section &section, Context &context) {
