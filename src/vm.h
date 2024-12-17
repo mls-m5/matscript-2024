@@ -177,13 +177,13 @@ struct Context {
     Value &at(const Token &name);
 };
 
-struct Command {
-    virtual ~Command() = default;
+struct Expression {
+    virtual ~Expression() = default;
     virtual Value run(struct Context &context) = 0;
 };
 
 struct Section {
-    std::vector<std::shared_ptr<Command>> commands;
+    std::vector<std::shared_ptr<Expression>> commands;
 };
 
 struct Function : public OtherValueContent {

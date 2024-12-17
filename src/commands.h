@@ -6,7 +6,7 @@
 
 namespace vm {
 
-struct VariableDeclaration : public Command {
+struct VariableDeclaration : public Expression {
     Token name;
 
     Value run(Context &context) override {
@@ -14,9 +14,9 @@ struct VariableDeclaration : public Command {
     }
 };
 
-struct Assignment : public Command {
-    std::shared_ptr<Command> left;
-    std::shared_ptr<Command> right;
+struct Assignment : public Expression {
+    std::shared_ptr<Expression> left;
+    std::shared_ptr<Expression> right;
 
     Value run(Context &context) override {
         auto l = left->run(context);
@@ -25,7 +25,7 @@ struct Assignment : public Command {
     }
 };
 
-struct VariableAccessor : public Command {
+struct VariableAccessor : public Expression {
     Token name;
 
     Value run(Context &context) override {
@@ -33,9 +33,9 @@ struct VariableAccessor : public Command {
     }
 };
 
-struct FunctionCall : public Command {
-    std::shared_ptr<Command> functionValue;
-    std::vector<std::shared_ptr<Command>> arguments;
+struct FunctionCall : public Expression {
+    std::shared_ptr<Expression> functionValue;
+    std::vector<std::shared_ptr<Expression>> arguments;
 
     Value run(Context &context) override {
         auto function = functionValue->run(context);
@@ -51,7 +51,7 @@ struct FunctionCall : public Command {
     }
 };
 
-struct StringLiteral : public Command {
+struct StringLiteral : public Expression {
     StringLiteral(Token text)
         : text{text} {}
 
@@ -62,16 +62,16 @@ struct StringLiteral : public Command {
     }
 };
 
-struct ArrayDeclaration : public Command {
+struct ArrayDeclaration : public Expression {
     Value run(Context &context) override {
         return std::make_shared<Array>();
     }
 };
 
-struct ForDeclaration : public Command {
+struct ForDeclaration : public Expression {
     Section section;
-    std::shared_ptr<Command> declaration;
-    std::shared_ptr<Command> range;
+    std::shared_ptr<Expression> declaration;
+    std::shared_ptr<Expression> range;
 
     Value run(Context &context) override {
         auto closure = Map{};
@@ -101,10 +101,10 @@ struct ForDeclaration : public Command {
 //     std::shared_ptr<Command> member;
 // };
 
-struct MemberFunctionCall : public Command {
-    std::shared_ptr<Command> object;
+struct MemberFunctionCall : public Expression {
+    std::shared_ptr<Expression> object;
     Token memberName;
-    std::vector<std::shared_ptr<Command>> arguments;
+    std::vector<std::shared_ptr<Expression>> arguments;
 
     Value run(Context &context) override {
         auto o = object->run(context);

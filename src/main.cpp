@@ -11,10 +11,10 @@
 #include <memory>
 #include <utility>
 
-std::shared_ptr<vm::Command> parseExpression(
+std::shared_ptr<vm::Expression> parseExpression(
     TokenIterator &it, std::function<bool(const Token &)> endCondition = {});
 
-std::shared_ptr<vm::Command> parseVariableDeclaration(TokenIterator &it) {
+std::shared_ptr<vm::Expression> parseVariableDeclaration(TokenIterator &it) {
     auto name = it.pop(TokenType::Text);
 
     auto declaration = std::make_shared<vm::VariableDeclaration>();
@@ -24,7 +24,7 @@ std::shared_ptr<vm::Command> parseVariableDeclaration(TokenIterator &it) {
     return declaration;
 }
 
-std::shared_ptr<vm::Command> parseFor(TokenIterator &it) {
+std::shared_ptr<vm::Expression> parseFor(TokenIterator &it) {
     it.pop(TokenType::For);
     it.pop(TokenType::LParen);
 
@@ -41,9 +41,9 @@ std::shared_ptr<vm::Command> parseFor(TokenIterator &it) {
     return exp;
 }
 
-std::vector<std::shared_ptr<vm::Command>> parseFunctionArguments(
+std::vector<std::shared_ptr<vm::Expression>> parseFunctionArguments(
     TokenIterator &it) {
-    auto args = std::vector<std::shared_ptr<vm::Command>>{};
+    auto args = std::vector<std::shared_ptr<vm::Expression>>{};
 
     it.pop();
     for (; it.current().type != TokenType::RParen;) {
@@ -62,9 +62,9 @@ std::vector<std::shared_ptr<vm::Command>> parseFunctionArguments(
     return args;
 }
 
-std::shared_ptr<vm::Command> parseExpression(
+std::shared_ptr<vm::Expression> parseExpression(
     TokenIterator &it, std::function<bool(const Token &)> endCondition) {
-    auto exp = std::shared_ptr<vm::Command>{};
+    auto exp = std::shared_ptr<vm::Expression>{};
 
     bool shouldBreak = false;
 
@@ -166,9 +166,6 @@ std::shared_ptr<vm::Command> parseExpression(
             it.consume();
 
             memberFunction->object = std::exchange(exp, memberFunction);
-            // parseExpression(it, [](const Token &token) {
-            //     return token.type == TokenType::Period;
-            // });
 
             memberFunction->memberName = it.pop();
 
