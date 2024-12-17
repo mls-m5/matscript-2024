@@ -276,7 +276,10 @@ struct Array : public OtherValueContent {
 
 Value call(const Section &section, Context &context);
 
-Value call(const Function &f, std::vector<Value> values, Context &context);
+Value call(const Function &f,
+           std::vector<Value> values,
+           Context &context,
+           Value self = {});
 
 const std::shared_ptr<Map> &getStd();
 

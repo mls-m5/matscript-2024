@@ -132,8 +132,13 @@ const std::shared_ptr<Map> &getStd() {
     return module;
 }
 
-Value call(const Function &f, std::vector<Value> values, Context &context) {
+Value call(const Function &f,
+           std::vector<Value> values,
+           Context &context,
+           Value self) {
     auto closure = Map{};
+
+    closure[t("this")] = self;
 
     auto newContext = Context{
         .closure = &closure,

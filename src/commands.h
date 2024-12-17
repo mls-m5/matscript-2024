@@ -86,14 +86,38 @@ struct ForDeclaration : public Command {
 
         auto r = range->run(newContext);
 
-        // TODO:  Call iterator
+        auto next = r.as<Map>()[t("next")].as<Function>();
 
-        throw "implement this";
-        // for (Value value; !(value = r.as<>() r.is<Void>());) {
-        //     ret = call(section, newContext);
-        // }
+        for (Value value; !(value = call(next, {r}, newContext)).asBool();) {
+            ret = call(section, newContext);
+        }
 
         return ret;
+    }
+};
+
+// struct MemberAccessor : public Command {
+//     std::shared_ptr<Command> object;
+//     std::shared_ptr<Command> member;
+// };
+
+struct MemberFunctionCall : public Command {
+    std::shared_ptr<Command> object;
+    Token memberName;
+    std::vector<std::shared_ptr<Command>> arguments;
+
+    Value run(Context &context) override {
+        auto o = object->run(context);
+        auto function = o.as<Map>()[memberName].as<Function>();
+
+        auto args = std::vector<Value>{};
+        args.resize(arguments.size() + 1);
+
+        for (auto &a : arguments) {
+            args.push_back(a->run(context));
+        }
+
+        return call(function, args, context, o);
     }
 };
 
